@@ -19,3 +19,7 @@ Visit soon..
 ## Visit our Discord channel!
 
 dsc.gg/robotcord 
+
+## Site
+
+https://robotcord.rf.gd
