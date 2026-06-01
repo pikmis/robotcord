@@ -23,7 +23,7 @@ import { Devs } from "@utils/constants";
 import { isTruthy } from "@utils/guards";
 import definePlugin, { IconProps, OptionType } from "@utils/types";
 import { waitFor } from "@webpack";
-import { React } from "@webpack/common";
+import { React, i18n } from "@webpack/common";
 import type { ComponentType, PropsWithChildren, ReactNode } from "react";
 
 import gitHash from "~git-hash";
@@ -43,6 +43,58 @@ const FallbackSectionTypes = {
     CUSTOM: "CUSTOM"
 };
 type SectionTypes = typeof FallbackSectionTypes;
+
+// Localization strings
+const localizationStrings = {
+    en: {
+        settingsLocation: "Settings location",
+        settingsLocationDesc: "Where to place the Robotcord settings section",
+        top: "At the top",
+        aboveNitro: "Above Nitro section",
+        belowNitro: "Below Nitro section",
+        aboveActivity: "Above Activity settings",
+        belowActivity: "Below Activity settings",
+        bottom: "At the bottom",
+        includeVencordInfo: "Include Robotcord info when copying",
+        includeVencordInfoDesc: "Also copy Robotcord, Electron, and Chromium info when clicking the version at the bottom left",
+        robotcordSettings: "Robotcord Settings",
+        plugins: "Plugins",
+        themes: "Themes",
+        visuals: "Visuals"
+    },
+    ru: {
+        settingsLocation: "Расположение настроек",
+        settingsLocationDesc: "Где разместить секцию настроек Robotcord",
+        top: "В самом верху",
+        aboveNitro: "Над разделом Nitro",
+        belowNitro: "Под разделом Nitro",
+        aboveActivity: "Над настройками Активности",
+        belowActivity: "Под настройками Активности",
+        bottom: "В самом низу",
+        includeVencordInfo: "Копировать информацию о Robotcord",
+        includeVencordInfoDesc: "Копировать также информацию о Robotcord (Robotcord, Electron, Chromium) при клике на версию внизу слева",
+        robotcordSettings: "Настройки Robotcord",
+        plugins: "Плагины",
+        themes: "Темы",
+        visuals: "Визуалы"
+    }
+};
+
+// Get current locale from Discord
+function getCurrentLocale(): "en" | "ru" {
+    try {
+        const locale = i18n?.intl?.locale || "en-US";
+        return locale.startsWith("ru") ? "ru" : "en";
+    } catch {
+        return "en";
+    }
+}
+
+// Get localized string
+function t(key: keyof typeof localizationStrings.en): string {
+    const locale = getCurrentLocale();
+    return localizationStrings[locale]?.[key] || localizationStrings.en[key] || key;
+}
 
 type SettingsLocation =
     | "top"
@@ -80,19 +132,19 @@ interface SettingsLayoutBuilder {
 const settings = definePluginSettings({
     settingsLocation: {
         type: OptionType.SELECT,
-        description: "Где разместить секцию настроек Robotcord",
+        description: () => t("settingsLocationDesc"),
         options: [
-            { label: "В самом верху", value: "top" },
-            { label: "Над разделом Nitro", value: "aboveNitro", default: true },
-            { label: "Под разделом Nitro", value: "belowNitro" },
-            { label: "Над настройками Активности", value: "aboveActivity" },
-            { label: "Под настройками Активности", value: "belowActivity" },
-            { label: "В самом низу", value: "bottom" },
+            { label: t("top"), value: "top" },
+            { label: t("aboveNitro"), value: "aboveNitro", default: true },
+            { label: t("belowNitro"), value: "belowNitro" },
+            { label: t("aboveActivity"), value: "aboveActivity" },
+            { label: t("belowActivity"), value: "belowActivity" },
+            { label: t("bottom"), value: "bottom" },
         ] as { label: string; value: SettingsLocation; default?: boolean; }[]
     },
     includeVencordInfoWhenCopying: {
         type: OptionType.BOOLEAN,
-        description: "Копировать также информацию о Robotcord (Robotcord, Electron, Chromium) при клике на версию внизу слева",
+        description: () => t("includeVencordInfoDesc"),
         default: true
     }
 });
@@ -171,26 +223,26 @@ export default definePlugin({
         const vencordEntries: SettingsLayoutNode[] = [
             buildEntry({
                 key: "vencord_main",
-                title: "Robotcord",
-                panelTitle: "Настройки Robotcord",
+                title: t("robotcordSettings"),
+                panelTitle: t("robotcordSettings"),
                 Component: VencordTab,
                 Icon: MainSettingsIcon
             }),
             buildEntry({
                 key: "vencord_plugins",
-                title: "Плагины",
+                title: t("plugins"),
                 Component: PluginsTab,
                 Icon: PluginsIcon
             }),
             buildEntry({
                 key: "vencord_themes",
-                title: "Темы",
+                title: t("themes"),
                 Component: ThemesTab,
                 Icon: PaintbrushIcon
             }),
             buildEntry({
                 key: "vencord_visuals",
-                title: "Визуалы",
+                title: t("visuals"),
                 Component: VisualsTab,
                 Icon: VisualsIcon
             }),
@@ -211,7 +263,7 @@ export default definePlugin({
         const vencordSection: SettingsLayoutNode = {
             key: "vencord_section",
             type: LayoutTypes.SECTION,
-            useTitle: () => "Настройки Robotcord",
+            useTitle: () => t("robotcordSettings"),
             buildLayout: () => vencordEntries
         };
 

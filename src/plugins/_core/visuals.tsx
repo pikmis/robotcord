@@ -9,8 +9,61 @@ import { Devs } from "@utils/constants";
 import definePlugin from "@utils/types";
 import { waitFor } from "@webpack";
 import { useEffect, useState } from "@webpack/common";
-import { React } from "@webpack/common";
+import { React, i18n } from "@webpack/common";
 import virtualMerge from "virtual-merge";
+
+// ─── Localization ─────────────────────────────────────────────────────────────
+
+const localizationStrings = {
+    en: {
+        customUsername: "Custom Username",
+        customDisplayName: "Custom Display Name",
+        customBio: "Custom Bio",
+        customAvatar: "Custom Avatar URL",
+        fakeNitro: "Fake Nitro",
+        profileColors: "Profile Colors",
+        primaryColor: "Primary Color",
+        accentColor: "Accent Color",
+        badges: "Badges",
+        selectBadges: "Select Badges",
+        customBadges: "Custom Badges",
+        addBadge: "Add Badge",
+        avatarDecoration: "Avatar Decoration",
+        selectDecoration: "Select Decoration"
+    },
+    ru: {
+        customUsername: "Кастомный юзернейм",
+        customDisplayName: "Кастомное отображаемое имя",
+        customBio: "Кастомная биография",
+        customAvatar: "URL кастомного аватара",
+        fakeNitro: "Поддельный Nitro",
+        profileColors: "Цвета профиля",
+        primaryColor: "Основной цвет",
+        accentColor: "Цвет акцента",
+        badges: "Значки",
+        selectBadges: "Выберите значки",
+        customBadges: "Кастомные значки",
+        addBadge: "Добавить значок",
+        avatarDecoration: "Украшение аватара",
+        selectDecoration: "Выберите украшение"
+    }
+};
+
+// Get current locale from Discord
+function getCurrentLocale(): "en" | "ru" {
+    try {
+        const locale = i18n?.intl?.locale || "en-US";
+        return locale.startsWith("ru") ? "ru" : "en";
+    } catch {
+        return "en";
+    }
+}
+
+// Get localized string
+function t(key: keyof typeof localizationStrings.en): string {
+    const locale = getCurrentLocale();
+    return localizationStrings[locale]?.[key] || localizationStrings.en[key] || key;
+}
 
 // ─── Remote badges from GitHub ────────────────────────────────────────────────
 
