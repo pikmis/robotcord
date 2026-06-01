@@ -1,0 +1,18 @@
+{
+    "123456789": [
+        {
+            "tooltip": "Robotcord Developer",
+            "badge": "https://cdn.discordapp.com/badge-icons/5e74e9b61934fc1f67c65515d1f7e60d.png"
+        }
+    ],
+    "987654321": [
+        {
+            "tooltip": "Robotcord Contributor",
+            "badge": "https://cdn.discordapp.com/badge-icons/3f9748e53446a137a052f3454e2de41e.png"
+        },
+        {
+            "tooltip": "Bug Hunter",
+            "badge": "https://cdn.discordapp.com/badge-icons/2717692c7dca7289b35297368a940dd0.png"
+        }
+    ]
+}

@@ -30,7 +30,6 @@ export * as WebpackPatcher from "./webpack/patchWebpack";
 export { PlainSettings, Settings };
 
 import { coreStyleRootNode, initStyles } from "@api/Styles";
-import { openSettingsTabModal, UpdaterTab } from "@components/settings";
 import { debounce } from "@shared/debounce";
 import { IS_WINDOWS } from "@utils/constants";
 import { createAndAppendStyle } from "@utils/css";
@@ -42,8 +41,6 @@ import { NotificationData, showNotification } from "./api/Notifications";
 import { initPluginManager, PMLogger, startAllPlugins } from "./api/PluginManager";
 import { PlainSettings, Settings, SettingsStore } from "./api/Settings";
 import { areLocalSettingsDirty, getCloudSettings, getCloudSyncDirection, markLocalSettingsDirty, putCloudSettings, shouldCloudSync } from "./api/SettingsSync/cloudSync";
-import { relaunch } from "./utils/native";
-import { checkForUpdates, update, UpdateLogger } from "./utils/updater";
 import { onceReady } from "./webpack";
 import { patches } from "./webpack/patchWebpack";
 
@@ -101,62 +98,11 @@ async function syncSettings() {
     });
 }
 
-let notifiedForUpdatesThisSession = false;
-
-async function runUpdateCheck() {
-    if (IS_UPDATER_DISABLED) return;
-
-    const notify = (data: NotificationData) => {
-        if (notifiedForUpdatesThisSession) return;
-        notifiedForUpdatesThisSession = true;
-
-        setTimeout(() => showNotification({
-            permanent: true,
-            noPersist: true,
-            ...data
-        }), 10_000);
-    };
-
-    try {
-        const isOutdated = await checkForUpdates();
-        if (!isOutdated) return;
-
-        if (Settings.autoUpdate) {
-            await update();
-            if (Settings.autoUpdateNotification) {
-                notify({
-                    title: "Vencord has been updated!",
-                    body: "Click here to restart",
-                    onClick: relaunch
-                });
-            }
-            return;
-        }
-
-        notify({
-            title: "A Vencord update is available!",
-            body: "Click here to view the update",
-            onClick: () => openSettingsTabModal(UpdaterTab!)
-        });
-    } catch (err) {
-        UpdateLogger.error("Failed to check for updates", err);
-    }
-}
-
 async function init() {
     await onceReady;
     startAllPlugins(StartAt.WebpackReady);
 
     syncSettings();
-
-    if (!IS_WEB && !IS_UPDATER_DISABLED) {
-        runUpdateCheck();
-
-        // this tends to get really annoying, so only do this if the user has auto-update without notification enabled
-        if (Settings.autoUpdate && !Settings.autoUpdateNotification) {
-            setInterval(runUpdateCheck, 1000 * 60 * 30); // 30 minutes
-        }
-    }
 
     if (IS_DEV) {
         const pendingPatches = patches.filter(p => !p.all && p.predicate?.() !== false);

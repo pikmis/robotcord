@@ -17,8 +17,8 @@
 */
 
 import { definePluginSettings } from "@api/Settings";
-import { BackupRestoreIcon, CloudIcon, MainSettingsIcon, PaintbrushIcon, PatchHelperIcon, PlaceholderIcon, PluginsIcon, UpdaterIcon, VesktopSettingsIcon } from "@components/Icons";
-import { BackupAndRestoreTab, CloudTab, PatchHelperTab, PluginsTab, ThemesTab, UpdaterTab, VencordTab } from "@components/settings/tabs";
+import { BackupRestoreIcon, CloudIcon, MainSettingsIcon, PaintbrushIcon, PatchHelperIcon, PlaceholderIcon, PluginsIcon, UpdaterIcon, VesktopSettingsIcon, VisualsIcon } from "@components/Icons";
+import { BackupAndRestoreTab, CloudTab, PatchHelperTab, PluginsTab, ThemesTab, UpdaterTab, VencordTab, VisualsTab } from "@components/settings/tabs";
 import { Devs } from "@utils/constants";
 import { isTruthy } from "@utils/guards";
 import definePlugin, { IconProps, OptionType } from "@utils/types";
@@ -80,26 +80,26 @@ interface SettingsLayoutBuilder {
 const settings = definePluginSettings({
     settingsLocation: {
         type: OptionType.SELECT,
-        description: "Where to put the Vencord settings section",
+        description: "Где разместить секцию настроек Robotcord",
         options: [
-            { label: "At the very top", value: "top" },
-            { label: "Above the Nitro section", value: "aboveNitro", default: true },
-            { label: "Below the Nitro section", value: "belowNitro" },
-            { label: "Above Activity Settings", value: "aboveActivity" },
-            { label: "Below Activity Settings", value: "belowActivity" },
-            { label: "At the very bottom", value: "bottom" },
+            { label: "В самом верху", value: "top" },
+            { label: "Над разделом Nitro", value: "aboveNitro", default: true },
+            { label: "Под разделом Nitro", value: "belowNitro" },
+            { label: "Над настройками Активности", value: "aboveActivity" },
+            { label: "Под настройками Активности", value: "belowActivity" },
+            { label: "В самом низу", value: "bottom" },
         ] as { label: string; value: SettingsLocation; default?: boolean; }[]
     },
     includeVencordInfoWhenCopying: {
         type: OptionType.BOOLEAN,
-        description: "Also copy Vencord info (Vencord, Electron, Chromium) when clicking the version info in the bottom left area of the Settings page",
+        description: "Копировать также информацию о Robotcord (Robotcord, Electron, Chromium) при клике на версию внизу слева",
         default: true
     }
 });
 
 export default definePlugin({
-    name: "Settings",
-    description: "Adds Settings UI and debug info",
+    name: "Настройки",
+    description: "Добавляет интерфейс настроек и отладочную информацию",
     authors: [Devs.Ven, Devs.Megu],
     required: true,
 
@@ -171,51 +171,30 @@ export default definePlugin({
         const vencordEntries: SettingsLayoutNode[] = [
             buildEntry({
                 key: "vencord_main",
-                title: "Vencord",
-                panelTitle: "Vencord Settings",
+                title: "Robotcord",
+                panelTitle: "Настройки Robotcord",
                 Component: VencordTab,
                 Icon: MainSettingsIcon
             }),
             buildEntry({
                 key: "vencord_plugins",
-                title: "Plugins",
+                title: "Плагины",
                 Component: PluginsTab,
                 Icon: PluginsIcon
             }),
             buildEntry({
                 key: "vencord_themes",
-                title: "Themes",
+                title: "Темы",
                 Component: ThemesTab,
                 Icon: PaintbrushIcon
             }),
-            !IS_UPDATER_DISABLED && UpdaterTab && buildEntry({
-                key: "vencord_updater",
-                title: "Updater",
-                panelTitle: "Vencord Updater",
-                Component: UpdaterTab,
-                Icon: UpdaterIcon
-            }),
             buildEntry({
-                key: "vencord_cloud",
-                title: "Cloud",
-                panelTitle: "Vencord Cloud",
-                Component: CloudTab,
-                Icon: CloudIcon
-            }),
-            buildEntry({
-                key: "vencord_backup_restore",
-                title: "Backup & Restore",
-                Component: BackupAndRestoreTab,
-                Icon: BackupRestoreIcon
-            }),
-            !IS_STANDALONE && PatchHelperTab && buildEntry({
-                key: "vencord_patch_helper",
-                title: "Patch Helper",
-                Component: PatchHelperTab,
-                Icon: PatchHelperIcon
+                key: "vencord_visuals",
+                title: "Визуалы",
+                Component: VisualsTab,
+                Icon: VisualsIcon
             }),
             ...this.customEntries.map(buildEntry),
-            // TODO: Remove deprecated customSections in a future update
             ...this.customSections.map((func, i) => {
                 const { section, element, label } = func(FallbackSectionTypes);
                 if (Object.values(FallbackSectionTypes).includes(section)) return null;
@@ -232,7 +211,7 @@ export default definePlugin({
         const vencordSection: SettingsLayoutNode = {
             key: "vencord_section",
             type: LayoutTypes.SECTION,
-            useTitle: () => "Vencord Settings",
+            useTitle: () => "Настройки Robotcord",
             buildLayout: () => vencordEntries
         };
 
@@ -261,7 +240,6 @@ export default definePlugin({
         return layout;
     },
 
-    /** @deprecated Use customEntries */
     customSections: [] as ((SectionTypes: SectionTypes) => any)[],
     customEntries: [] as EntryOptions[],
 
@@ -272,10 +250,9 @@ export default definePlugin({
     get chromiumVersion() {
         try {
             return VencordNative.native.getVersions().chrome
-                // @ts-expect-error Typescript will add userAgentData IMMEDIATELY
                 || navigator.userAgentData?.brands?.find(b => b.brand === "Chromium" || b.brand === "Google Chrome")?.version
                 || null;
-        } catch { // inb4 some stupid browser throws unsupported error for navigator.userAgentData, it's only in chromium
+        } catch {
             return null;
         }
     },
@@ -291,7 +268,7 @@ export default definePlugin({
     getInfoRows() {
         const { electronVersion, chromiumVersion, additionalInfo } = this;
 
-        const rows = [`Vencord ${gitHash}${additionalInfo}`];
+        const rows = [`Robotcord ${gitHash}${additionalInfo}`];
 
         if (electronVersion) rows.push(`Electron ${electronVersion}`);
         if (chromiumVersion) rows.push(`Chromium ${chromiumVersion}`);
