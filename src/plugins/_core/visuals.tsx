@@ -618,6 +618,7 @@ export default definePlugin({
     DISCORD_BADGES,
     get availableDecorations() { return availableDecorations; },
     get remoteBadges() { return RemoteBadges; },
+    getCurrentLocale,
 
     // Real React hook — mirrors how decor's useUserDecorAvatarDecoration works
     useAvatarDecoration(user: any) {
