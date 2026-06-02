@@ -59,6 +59,9 @@ function getCurrentLocale(): "en" | "ru" {
     }
 }
 
+// Export for other components
+export { getCurrentLocale };
+
 // Get localized string
 function t(key: keyof typeof localizationStrings.en): string {
     const locale = getCurrentLocale();
@@ -615,7 +618,6 @@ export default definePlugin({
     DISCORD_BADGES,
     get availableDecorations() { return availableDecorations; },
     get remoteBadges() { return RemoteBadges; },
-    getCurrentLocale,
 
     // Real React hook — mirrors how decor's useUserDecorAvatarDecoration works
     useAvatarDecoration(user: any) {
