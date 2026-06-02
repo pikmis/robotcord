@@ -6,6 +6,7 @@
 import { useSettings } from "@api/Settings";
 import { Divider } from "@components/Divider";
 import { SettingsTab, wrapTab } from "@components/settings/tabs/BaseTab";
+import { CustomRoleSettings } from "./CustomRoleSettings";
 import VisualsPlugin, { CustomBadge, DecorationOption } from "@plugins/_core/visuals";
 import { Margins } from "@utils/margins";
 import { Button, ColorPicker, Forms, React, TextInput, useEffect, useState, i18n } from "@webpack/common";
@@ -496,6 +497,13 @@ function VisualsSettings() {
                     )}
                     <Button size={Button.Sizes.SMALL} color={Button.Colors.BRAND} onClick={addCustomBadge} disabled={!newBadgeUrl.trim()}>{t("addBadge")}</Button>
                 </div>
+            </section>
+
+            <Divider className={Margins.top16} />
+
+            {/* ── Кастомные роли ── */}
+            <section className={Margins.top16}>
+                <CustomRoleSettings />
             </section>
 
         </SettingsTab>
