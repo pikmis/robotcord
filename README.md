@@ -14,12 +14,8 @@ This is a Discord client.
 
 ## Installing / Uninstalling
 
-Visit soon..
+https://robotcord.rf.gd
 
 ## Visit our Discord channel!
 
 dsc.gg/robotcord 
-
-## Site
-
-https://robotcord.rf.gd
