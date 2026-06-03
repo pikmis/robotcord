@@ -181,3 +181,14 @@ if (IS_DISCORD_DESKTOP) {
 ipcMain.on(IpcEvents.SUPPORTS_WINDOWS_MATERIAL, e => {
     e.returnValue = process.platform === "win32" && Number(release().split(".")[2]) >= 22621;
 });
+
+// Version checker fetch handler - allows fetching without CORS issues
+ipcMain.handle(IpcEvents.VERSION_CHECKER_FETCH, async (_, url: string) => {
+    try {
+        const response = await fetch(url, { cache: "no-store" });
+        const text = await response.text();
+        return { ok: response.ok, status: response.status, body: text };
+    } catch (error) {
+        return { ok: false, status: 0, error: String(error) };
+    }
+});

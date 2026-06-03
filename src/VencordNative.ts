@@ -85,7 +85,8 @@ export default {
             if (!IS_DEV) return;
 
             ipcRenderer.on(IpcEvents.RENDERER_CSS_UPDATE, (_e, newCss: string) => cb(newCss));
-        }
+        },
+        versionCheckerFetch: (url: string) => invoke<{ ok: boolean; status: number; body?: string; error?: string; }>(IpcEvents.VERSION_CHECKER_FETCH, url)
     },
 
     csp: {

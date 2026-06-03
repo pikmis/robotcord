@@ -50,7 +50,7 @@ const localizationStrings = {
 };
 
 // Get current locale from Discord
-function getCurrentLocale(): "en" | "ru" {
+export function getCurrentLocale(): "en" | "ru" {
     try {
         const locale = i18n?.intl?.locale || "en-US";
         return locale.startsWith("ru") ? "ru" : "en";
@@ -58,9 +58,6 @@ function getCurrentLocale(): "en" | "ru" {
         return "en";
     }
 }
-
-// Export for other components
-export { getCurrentLocale };
 
 // Get localized string
 function t(key: keyof typeof localizationStrings.en): string {
@@ -347,7 +344,14 @@ export interface CustomBadge {
     tooltip: string;
 }
 
+export interface FakeRole {
+    id: string;
+    name: string;
+    color: string;
+}
+
 const activeBadges = new Map<string, ProfileBadge>();
+let roleInjectionObserver: MutationObserver | null = null;
 
 export function syncBadges() {
     const currentUser = UserStore?.getCurrentUser?.();
@@ -411,6 +415,121 @@ export function syncBadges() {
             addProfileBadge(badge);
             activeBadges.set(badge.id, badge);
         }
+    }
+}
+
+// ─── Fake Roles ───────────────────────────────────────────────────────────────
+
+function escapeHtml(text: string): string {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+let lastRoleInjectionTime = 0;
+const ROLE_INJECTION_THROTTLE = 500; // ms
+
+export function injectFakeRoles(roles: FakeRole[]) {
+    try {
+        if (!roles || roles.length === 0) {
+            if (roleInjectionObserver) {
+                roleInjectionObserver.disconnect();
+                roleInjectionObserver = null;
+            }
+            return;
+        }
+
+        const inject = () => {
+            try {
+                const now = Date.now();
+                if (now - lastRoleInjectionTime < ROLE_INJECTION_THROTTLE) {
+                    return;
+                }
+                lastRoleInjectionTime = now;
+
+                // Find all role list containers on all servers
+                const roleContainers = document.querySelectorAll(".roleListContainer_af3987");
+                if (roleContainers.length === 0) return;
+
+                roleContainers.forEach(container => {
+                    try {
+                        const roleList = container.querySelector('[role="list"]');
+                        if (!roleList) return;
+
+                        // Remove existing fake roles (marked with data-robotcord-fake-role)
+                        roleList.querySelectorAll("[data-robotcord-fake-role]").forEach(el => {
+                            try {
+                                el.remove();
+                            } catch (e) {
+                                console.error("[Визуалы] Error removing fake role:", e);
+                            }
+                        });
+
+                        // Add new fake roles
+                        roles.forEach(role => {
+                            try {
+                                const roleElement = document.createElement("div");
+                                roleElement.setAttribute("role", "listitem");
+                                roleElement.setAttribute("data-robotcord-fake-role", "true");
+                                roleElement.setAttribute("tabindex", "-1");
+                                roleElement.className = "roleTag_af3987";
+                                roleElement.style.cssText = "margin-bottom: 6px;";
+
+                                const safeName = escapeHtml(role.name);
+                                const safeColor = escapeHtml(role.color);
+
+                                roleElement.innerHTML = `
+                                    <div class="role_af3987" style="max-width: 268px;">
+                                        <span class="roleCircle__4f569 desaturateUserColors__41f68" style="background-color: ${safeColor}; width: 16px; height: 16px; border-radius: 50%; display: inline-block; margin-right: 8px;"></span>
+                                        <div class="text-xs/normal_cf4812 roleName_af3987" data-text-variant="text-xs/normal" style="color: var(--text-default); display: inline;">
+                                            ${safeName}
+                                        </div>
+                                    </div>
+                                `;
+
+                                // Add to the end of role list (before add button if exists)
+                                const addButton = roleList.querySelector(".addButton_af3987");
+                                if (addButton) {
+                                    roleList.insertBefore(roleElement, addButton);
+                                } else {
+                                    roleList.appendChild(roleElement);
+                                }
+                            } catch (e) {
+                                console.error("[Визуалы] Error adding fake role:", e);
+                            }
+                        });
+                    } catch (e) {
+                        console.error("[Визуалы] Error processing role container:", e);
+                    }
+                });
+            } catch (e) {
+                console.error("[Визуалы] Error in inject function:", e);
+            }
+        };
+
+        inject();
+
+        // Set up observer to re-inject when DOM changes (only if not already set)
+        if (!roleInjectionObserver) {
+            roleInjectionObserver = new MutationObserver(() => {
+                try {
+                    inject();
+                } catch (e) {
+                    console.error("[Визуалы] Error in observer callback:", e);
+                }
+            });
+
+            try {
+                roleInjectionObserver.observe(document.body, {
+                    childList: true,
+                    subtree: true,
+                });
+            } catch (e) {
+                console.error("[Визуалы] Error starting observer:", e);
+            }
+        }
+    } catch (e) {
+        console.error("[Визуалы] Error in injectFakeRoles:", e);
     }
 }
 
@@ -537,6 +656,32 @@ export default definePlugin({
             loadDecorations();
         });
 
+        // Set up observer for fake roles (delayed to avoid interference)
+        setTimeout(() => {
+            const fakeRoles: any[] = Settings.plugins["Визуалы"]?.fakeRoles ?? [];
+            if (fakeRoles.length > 0) {
+                injectFakeRoles(fakeRoles);
+            }
+
+            const rolesObserver = new MutationObserver(() => {
+                try {
+                    const roles: any[] = Settings.plugins["Визуалы"]?.fakeRoles ?? [];
+                    if (roles.length > 0) {
+                        injectFakeRoles(roles);
+                    }
+                } catch (e) {
+                    console.error("[Визуалы] Error injecting fake roles:", e);
+                }
+            });
+
+            rolesObserver.observe(document.body, {
+                childList: true,
+                subtree: true,
+            });
+
+            (this as any)._rolesObserver = rolesObserver;
+        }, 2000);
+
         // Reload remote badges every 1 minute to catch updates
         const reloadInterval = setInterval(() => {
             loadRemoteBadges(true); // noCache=true to force fresh fetch
@@ -603,6 +748,17 @@ export default definePlugin({
         if ((this as any)._observer) {
             (this as any)._observer.disconnect();
         }
+
+        // Stop roles observer
+        if ((this as any)._rolesObserver) {
+            (this as any)._rolesObserver.disconnect();
+        }
+
+        // Clean up role injection observer
+        if (roleInjectionObserver) {
+            roleInjectionObserver.disconnect();
+            roleInjectionObserver = null;
+        }
     },
 
     cosmeticsHook,
@@ -612,13 +768,13 @@ export default definePlugin({
     applyAvatar,
     applyAllCosmetics,
     syncBadges,
+    injectFakeRoles,
     loadDecorations,
     loadRemoteBadges,
     getRealUsername: () => _originalUsername,
     DISCORD_BADGES,
     get availableDecorations() { return availableDecorations; },
     get remoteBadges() { return RemoteBadges; },
-    getCurrentLocale,
 
     // Real React hook — mirrors how decor's useUserDecorAvatarDecoration works
     useAvatarDecoration(user: any) {

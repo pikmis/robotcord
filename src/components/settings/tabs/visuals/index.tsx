@@ -6,8 +6,7 @@
 import { useSettings } from "@api/Settings";
 import { Divider } from "@components/Divider";
 import { SettingsTab, wrapTab } from "@components/settings/tabs/BaseTab";
-import { CustomRoleSettings } from "./CustomRoleSettings";
-import VisualsPlugin, { CustomBadge, DecorationOption } from "@plugins/_core/visuals";
+import VisualsPlugin, { CustomBadge, DecorationOption, FakeRole } from "@plugins/_core/visuals";
 import { Margins } from "@utils/margins";
 import { Button, ColorPicker, Forms, React, TextInput, useEffect, useState, i18n } from "@webpack/common";
 
@@ -52,7 +51,15 @@ const localizationStrings = {
         addBadge: "Add Badge",
         imageUrl: "Image URL (https://...)",
         tooltipOnHover: "Tooltip on hover (optional)",
-        delete: "Delete"
+        delete: "Delete",
+        fakeRoles: "Fake Roles",
+        fakeRolesDesc: "Create and display fake roles on all servers. Only you can see them.",
+        roleName: "Role Name",
+        roleColor: "Role Color",
+        enterRoleName: "Enter role name...",
+        addRole: "Add Role",
+        createdRoles: "Created Roles",
+        noRoles: "No roles created yet"
     },
     ru: {
         usernameReplacement: "Замена юзернейма",
@@ -92,7 +99,15 @@ const localizationStrings = {
         addBadge: "Добавить значок",
         imageUrl: "URL картинки (https://...)",
         tooltipOnHover: "Подпись при наведении (необязательно)",
-        delete: "Удалить"
+        delete: "Удалить",
+        fakeRoles: "Fake Roles (Фейк-роли)",
+        fakeRolesDesc: "Создай и отображай фейк-роли на всех серверах. Видно только тебе.",
+        roleName: "Имя роли",
+        roleColor: "Цвет роли",
+        enterRoleName: "Введи имя роли...",
+        addRole: "Добавить роль",
+        createdRoles: "Созданные роли",
+        noRoles: "Роли ещё не созданы"
     }
 };
 
@@ -150,7 +165,7 @@ function Row({ icon, title, subtitle, right }: { icon?: string; title: string; s
     );
 }
 
-// ─── Badge toggle ─────────────────────────────────────────────────────────────
+// ─── Badge toggle ─────────────────────────────────────────────────────────
 
 function BadgeToggle({ badge, enabled, onToggle }: {
     badge: typeof VisualsPlugin.DISCORD_BADGES[number];
@@ -179,6 +194,33 @@ function CustomBadgeRow({ badge, onRemove }: { badge: CustomBadge; onRemove: () 
             <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ color: "var(--text-normal)", fontSize: 14, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{badge.tooltip || t("addBadge")}</div>
                 <div style={{ color: "var(--text-muted)", fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{badge.url}</div>
+            </div>
+            <Button size={Button.Sizes.SMALL} color={Button.Colors.RED} onClick={onRemove}>{t("delete")}</Button>
+        </div>
+    );
+}
+
+// ─── Fake role row ────────────────────────────────────────────────────────────
+
+interface FakeRole {
+    id: string;
+    name: string;
+    color: string;
+}
+
+function FakeRoleRow({ role, onRemove }: { role: FakeRole; onRemove: () => void; }) {
+    return (
+        <div style={{
+            display: "flex", alignItems: "center", gap: 8, marginBottom: 6,
+            padding: "8px 12px", background: "var(--background-secondary)", borderRadius: 8,
+        }}>
+            <span style={{
+                width: 16, height: 16, borderRadius: "50%",
+                background: role.color, flexShrink: 0
+            }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ color: "var(--text-normal)", fontSize: 14, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{role.name}</div>
+                <div style={{ color: "var(--text-muted)", fontSize: 12, fontFamily: "var(--font-code)" }}>{role.color}</div>
             </div>
             <Button size={Button.Sizes.SMALL} color={Button.Colors.RED} onClick={onRemove}>{t("delete")}</Button>
         </div>
@@ -289,9 +331,16 @@ function VisualsSettings() {
     const primaryColor: number = plug.profilePrimaryColor ?? 0x000000;
     const accentColor: number = plug.profileAccentColor ?? 0x000000;
     const colorsEnabled: boolean = plug.profileColorsEnabled ?? false;
+    const fakeRoles: FakeRole[] = plug.fakeRoles ?? [];
 
     const [newBadgeUrl, setNewBadgeUrl] = useState("");
     const [newBadgeTooltip, setNewBadgeTooltip] = useState("");
+    const [newRoleName, setNewRoleName] = useState("");
+    const [newRoleColor, setNewRoleColor] = useState("#6C5B7B");
+
+    useEffect(() => {
+        VisualsPlugin.injectFakeRoles(fakeRoles);
+    }, [fakeRoles]);
 
     function handleUsernameChange(value: string) {
         plug.customUsername = value;
@@ -327,6 +376,19 @@ function VisualsSettings() {
         setNewBadgeUrl("");
         setNewBadgeTooltip("");
         VisualsPlugin.syncBadges();
+    }
+
+    function addFakeRole() {
+        const name = newRoleName.trim();
+        if (!name) return;
+        const newRole: FakeRole = {
+            id: Date.now().toString(),
+            name,
+            color: newRoleColor
+        };
+        plug.fakeRoles = [...fakeRoles, newRole];
+        setNewRoleName("");
+        setNewRoleColor("#6C5B7B");
     }
 
     return (
@@ -501,10 +563,64 @@ function VisualsSettings() {
 
             <Divider className={Margins.top16} />
 
-            {/* ── Кастомные роли ── */}
+            {/* ── Фейк-роли ── */}
             <section className={Margins.top16}>
-                <CustomRoleSettings />
+                <Forms.FormTitle tag="h5">{t("fakeRoles")}</Forms.FormTitle>
+                <Forms.FormText className={Margins.bottom16} style={{ color: "var(--text-muted)" }}>
+                    {t("fakeRolesDesc")}
+                </Forms.FormText>
+
+                {/* Список созданных ролей */}
+                {fakeRoles.length > 0 && (
+                    <>
+                        <Forms.FormTitle tag="h5" style={{ marginBottom: 8, marginTop: 12 }}>{t("createdRoles")}</Forms.FormTitle>
+                        {fakeRoles.map(role => (
+                            <FakeRoleRow key={role.id} role={role} onRemove={() => { plug.fakeRoles = fakeRoles.filter(r => r.id !== role.id); }} />
+                        ))}
+                        <Divider className={Margins.top12} />
+                    </>
+                )}
+
+                {/* Форма для добавления новой роли */}
+                <div style={{ padding: 12, background: "var(--background-secondary)", borderRadius: 8, display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
+                    <Forms.FormTitle tag="h5" style={{ marginBottom: 0 }}>{t("addRole")}</Forms.FormTitle>
+
+                    {/* Имя роли */}
+                    <div>
+                        <Forms.FormText style={{ color: "var(--text-muted)", fontSize: 12, marginBottom: 4 }}>{t("roleName")}</Forms.FormText>
+                        <TextInput placeholder={t("enterRoleName")} value={newRoleName} onChange={setNewRoleName} />
+                    </div>
+
+                    {/* Цвет роли */}
+                    <div>
+                        <Forms.FormText style={{ color: "var(--text-muted)", fontSize: 12, marginBottom: 4 }}>{t("roleColor")}</Forms.FormText>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ flex: 1 }}>
+                                <TextInput placeholder="#6C5B7B" value={newRoleColor} onChange={setNewRoleColor} />
+                            </div>
+                            <div style={{
+                                width: 40, height: 40, borderRadius: 6, border: "2px solid var(--background-tertiary)",
+                                background: newRoleColor, cursor: "pointer", flexShrink: 0
+                            }} onClick={() => { }} title={newRoleColor} />
+                        </div>
+                    </div>
+
+                    {/* Preview */}
+                    {newRoleName && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: 8, background: "var(--background-tertiary)", borderRadius: 4 }}>
+                            <span style={{
+                                width: 16, height: 16, borderRadius: "50%",
+                                background: newRoleColor
+                            }} />
+                            <div style={{ color: "var(--text-normal)", fontSize: 14 }}>{newRoleName}</div>
+                        </div>
+                    )}
+
+                    <Button size={Button.Sizes.SMALL} color={Button.Colors.BRAND} onClick={addFakeRole} disabled={!newRoleName.trim()}>{t("addRole")}</Button>
+                </div>
             </section>
+
+            <Divider className={Margins.top16} />
 
         </SettingsTab>
     );

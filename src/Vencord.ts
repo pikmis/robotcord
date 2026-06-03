@@ -33,6 +33,7 @@ import { coreStyleRootNode, initStyles } from "@api/Styles";
 import { debounce } from "@shared/debounce";
 import { IS_WINDOWS } from "@utils/constants";
 import { createAndAppendStyle } from "@utils/css";
+import { relaunch } from "@utils/native";
 import { StartAt } from "@utils/types";
 import { SettingsRouter } from "@webpack/common";
 
