@@ -29,7 +29,7 @@ const INSTALLER_URL = "https://robotcord.rf.gd/download/installer/Robotcord-Inst
 
 let versionCheckInterval: NodeJS.Timeout | null = null;
 let lastCheckedVersion: string | null = null;
-let currentVersion: string = "1.67"; // This should be updated based on your package.json or a version file
+let currentVersion: string = "1.67.1"; // This should be updated based on your package.json or a version file
 
 /**
  * Compare two semantic versions
@@ -257,7 +257,7 @@ export default definePlugin({
 
     start() {
         // Set current version from package.json
-        setCurrentVersion("1.67");
+        setCurrentVersion("1.67.1");
         // Start checking for updates
         startVersionChecker();
         VersionCheckLogger.info("Version Checker plugin started");
